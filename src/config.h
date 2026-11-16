@@ -5,7 +5,7 @@
 //   wifi <ssid> <password>
 //   server <host> <port> <token>
 #define FW_NAME "dsh-esp32-status"
-#define FW_VERSION "0.1.1"
+#define FW_VERSION "0.1.2"
 
 #define OLED_SDA 21
 #define OLED_SCL 22

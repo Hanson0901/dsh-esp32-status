@@ -299,6 +299,11 @@ export class Bridge {
       },
       req,
     )
+    const ack = url.searchParams.get('wifiAck') || ''
+    if (ack && this.pendingWifi?.id === ack) {
+      this.log(`device ${deviceId} applied Wi-Fi config`)
+      this.pendingWifi = null
+    }
     json(res, 200, this.statePayload())
   }
 
@@ -314,6 +319,7 @@ export class Bridge {
       provider: snap.model.provider || '',
       effort: snap.model.effort || '',
       pollMs: 1000,
+      ...(this.pendingWifi ? { wifi: this.pendingWifi } : {}),
     }
   }
 
@@ -343,6 +349,9 @@ export class Bridge {
       state: this.tracker.snapshot(),
       devices: this.devicesList(),
       flash: this.flasher.snapshot(),
+      wifiPending: this.pendingWifi
+        ? { ssid: this.pendingWifi.ssid, sentAt: this.pendingWifi.sentAt }
+        : null,
       now: Date.now(),
     }
   }
@@ -375,6 +384,19 @@ export class Bridge {
         this.flasher
           .flash(port, { erase: Boolean(body.erase), appOnly: body.appOnly !== false })
           .catch((error) => this.log(`flash failed: ${error.message}`))
+        break
+      }
+      case 'wifi': {
+        const ssid = String(body.ssid || '').trim().slice(0, 32)
+        const pass = String(body.pass || '').slice(0, 64)
+        if (!ssid) throw new Error('SSID 不能是空的')
+        this.pendingWifi = {
+          id: randomBytes(4).toString('hex'),
+          ssid,
+          pass,
+          sentAt: Date.now(),
+        }
+        this.log(`queued Wi-Fi config for the next device poll: ssid=${ssid}`)
         break
       }
       case 'stop-flash':

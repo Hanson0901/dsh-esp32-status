@@ -66,6 +66,18 @@ window.__ModuleLoader__.load({
       btnPrimary: { background: '#2563eb', borderColor: '#2563eb', color: '#fff' },
       btnDanger: { background: 'transparent', borderColor: 'rgba(239,68,68,0.55)', color: '#f87171' },
       btnDisabled: { opacity: 0.45, cursor: 'not-allowed' },
+      input: {
+        width: '100%',
+        boxSizing: 'border-box',
+        padding: '6px 9px',
+        borderRadius: 8,
+        border: '1px solid var(--dsh-border, rgba(255,255,255,0.16))',
+        background: 'rgba(0,0,0,0.22)',
+        color: 'inherit',
+        font: 'inherit',
+        fontSize: 12,
+        outline: 'none',
+      },
       row: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
       deviceRow: {
         display: 'flex',
@@ -351,6 +363,8 @@ window.__ModuleLoader__.load({
       const [showToken, setShowToken] = useState(false)
       const [confirmPort, setConfirmPort] = useState('')
       const [preserve, setPreserve] = useState(true)
+      const [wifiSsid, setWifiSsid] = useState('')
+      const [wifiPass, setWifiPass] = useState('')
       const [confirmReset, setConfirmReset] = useState(false)
       const [copied, setCopied] = useState('')
       const [lastSync, setLastSync] = useState(0)
@@ -436,6 +450,66 @@ window.__ModuleLoader__.load({
       const token = bridge?.token ?? ''
       const exampleIp = bridge?.urls?.[0]?.address ?? '<LAN-IP>'
       const now = snap?.now ?? Date.now()
+
+      const setupSection = h(
+        'section',
+        { style: S.card },
+        h(
+          'div',
+          { style: S.cardHead },
+          h(
+            'div',
+            null,
+            h('div', { style: S.cardTitle }, 'Wi-Fi 設定'),
+            h('div', { style: S.hint }, '裝置已連上網路時，換網可以直接從這裡送出'),
+          ),
+        ),
+        h(
+          'div',
+          { style: { display: 'grid', gap: 8 } },
+          h('input', {
+            style: S.input,
+            placeholder: 'Wi-Fi SSID',
+            value: wifiSsid,
+            onChange: (e) => setWifiSsid(e.target.value),
+          }),
+          h('input', {
+            style: S.input,
+            type: 'password',
+            placeholder: 'Wi-Fi 密碼（開放網路可留空）',
+            value: wifiPass,
+            onChange: (e) => setWifiPass(e.target.value),
+          }),
+          h(
+            'div',
+            { style: { display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' } },
+            btn('套用 Wi-Fi', () => act('wifi', { ssid: wifiSsid, pass: wifiPass }), {
+              primary: true,
+              disabled: busy !== '' || !wifiSsid,
+            }),
+            devices.length
+              ? h('span', { style: S.hint }, `${devices.filter((d) => d.online).length}/${devices.length} 台在線`)
+              : h('span', { style: S.hint }, '尚無裝置回報'),
+          ),
+          snap?.wifiPending
+            ? h(
+                'div',
+                { style: { ...S.hint, color: '#fbbf24' } },
+                `已送出「${snap.wifiPending.ssid}」，等待裝置下一次輪詢套用…`,
+              )
+            : null,
+          h(
+            'div',
+            { style: S.hint },
+            '裝置換網後 IP 可能改變。若這台 Mac 的 IP 也變了，用 USB 序列埠送 server <Mac-IP> 8787 <token>，或手機藍牙送同樣指令。',
+          ),
+          h(
+            'div',
+            { style: S.hint },
+            '首次設定（裝置還未上網）：手機／電腦藍牙配對 dsh-esp32-status（SPP），用序列終端送 wifi <SSID> <密碼>；面板下方的「藍牙」也接受同樣指令。',
+          ),
+        ),
+      )
 
       const header = h(
         'header',
@@ -729,6 +803,7 @@ window.__ModuleLoader__.load({
         hero,
         devicesSection,
         bridgeSection,
+        setupSection,
         flashSection,
         errorsSection,
         footer,

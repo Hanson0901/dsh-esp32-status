@@ -1,4 +1,5 @@
 #include "net.h"
+#include <esp_wifi.h>
 
 #include <ArduinoJson.h>
 #include <HTTPClient.h>
@@ -168,12 +169,14 @@ bool Net::httpState() {
   http.setTimeout(3000);
   String url = "http://" + host_ + ":" + String(port_) + "/api/state?deviceId=" + deviceId() +
                "&rssi=" + String(WiFi.RSSI()) + "&fw=" FW_VERSION;
+  if (wifiAck_.length()) url += "&wifiAck=" + wifiAck_;
   if (!http.begin(client, url)) return false;
   http.addHeader("x-dsh-token", token_);
   int code = http.GET();
   String response = code > 0 ? http.getString() : String();
   http.end();
   applyState(response, code);
+  if (code == 200 && wifiAck_.length()) wifiAck_ = "";
   return code == 200;
 }
 
@@ -204,6 +207,19 @@ void Net::applyState(const String &payload, int code) {
       token_ = paired;
       prefs.putString("token", token_);
       Serial.println("[net] paired with DSH panel, token stored");
+    }
+
+    // Wi-Fi provisioning over the existing LAN link.
+    JsonObject wifi = doc["wifi"].as<JsonObject>();
+    if (!wifi.isNull()) {
+      const char *id = wifi["id"] | "";
+      const char *ssid = wifi["ssid"] | "";
+      const char *pass = wifi["pass"] | "";
+      if (ssid[0]) {
+        Serial.printf("[net] applying Wi-Fi from panel: ssid=%s\n", ssid);
+        setWifi(ssid, pass);
+        wifiAck_ = id;
+      }
     }
     return;
   }

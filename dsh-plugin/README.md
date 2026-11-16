@@ -86,7 +86,20 @@ status
 - `PAIR-ME` 是首次配對用的暫時 token：板子第一次 `/api/hello` 成功後，
   面板會回傳真正的 token，板子寫進 NVS，之後自動使用。
 - 也可以在自行編譯時把 `include/secrets.h`（git-ignored）填好。
-- 其他序列指令：`help`、`status`、`clear`（清除 NVS 設定）、`reboot`。
+- 其他序列指令：`help`、`status`、`scan`（列出可見 AP 與 auth code）、
+  `clear`（清除 NVS 設定）、`reboot`。
+
+### 藍牙設定（選用）
+
+板子的經典藍牙（SPP）**預設關閉**：ESP32 的藍牙與 Wi-Fi 共用無線電，
+同時開啟會讓 Wi-Fi 掉線。需要時用 USB 序列埠送：
+
+```
+bt on      # 配對名稱 dsh-esp32-status；用手機/電腦序列終端送 wifi <SSID> <密碼>
+bt off     # 設定完關掉，Wi-Fi 會恢復
+```
+
+Wi-Fi 已連線時，也可以直接從面板「Wi-Fi 設定」卡片換網，不需要序列埠。
 
 ## 左側面板
 

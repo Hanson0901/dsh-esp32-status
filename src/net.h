@@ -35,4 +35,5 @@ class Net {
   bool started_ = false;
   bool needSetup_ = false;
   bool eventHooked_ = false;
+  String wifiAck_;
 };
