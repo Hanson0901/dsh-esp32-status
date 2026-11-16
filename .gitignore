@@ -1,0 +1,8 @@
+.pio/
+.pio-core/
+.venv/
+build/
+node_modules/
+include/secrets.h
+*.log
+.DS_Store

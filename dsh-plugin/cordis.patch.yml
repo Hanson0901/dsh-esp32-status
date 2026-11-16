@@ -1,0 +1,6 @@
+- insert:
+    - id: esp32-status
+      name: dsh-esp32-status
+      config:
+        enabled: true
+        port: 8787

@@ -1,0 +1,57 @@
+{
+  "name": "dsh-esp32-status",
+  "version": "0.1.0",
+  "description": "ESP32 OLED status display for DeepSeek Harness: a LAN bridge, a sidebar panel, and one-click flashing.",
+  "type": "module",
+  "main": "index.js",
+  "exports": {
+    ".": "./index.js",
+    "./client": "./client.js",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "index.js",
+    "client.js",
+    "cordis.patch.yml",
+    "lib",
+    "firmware",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=22",
+    "dsh": ">=0.2.0-rc.1"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "inject": [
+        "@deepseek-ai/dsh-client-ui-renderer",
+        "@deepseek-ai/dsh-client-locale"
+      ],
+      "platform": "web",
+      "immediately": true
+    }
+  },
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "deepseek-harness",
+    "esp32",
+    "oled",
+    "ssd1306",
+    "flasher"
+  ],
+  "author": "Hanson0901",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Hanson0901/dsh-esp32-status.git"
+  },
+  "homepage": "https://github.com/Hanson0901/dsh-esp32-status#readme",
+  "bugs": {
+    "url": "https://github.com/Hanson0901/dsh-esp32-status/issues"
+  }
+}
