@@ -16,6 +16,7 @@ struct DshSnapshot {
   char status[16] = "boot";   // boot|connecting|offline|auth|idle|thinking|responding|tool|approval|error
   char body[192] = "";
   char detail[64] = "";       // tool name / error code
+  char workspace[24] = "";    // active conversation workspace (folder name)
   char model[40] = "";
   char effort[16] = "";
   char host[40] = "";

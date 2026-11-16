@@ -1,19 +1,19 @@
 {
   "name": "dsh-esp32-status",
-  "version": "0.1.3",
+  "version": "0.2.0",
   "board": "esp32dev",
   "chip": "esp32",
   "file": "dsh-esp32-status-esp32dev.bin",
   "offset": 0,
-  "bytes": 1789600,
-  "sha256": "ca920ca59fd0254f6d8a957193551040507eace065e1ea6748d670ae81cb5915",
+  "bytes": 1790912,
+  "sha256": "122be036c6dd000d09eed130375c08b0c9367ceafde4f8b326b02f9f62e5be3b",
   "app": {
     "file": "dsh-esp32-status-esp32dev-app.bin",
     "offset": 65536,
-    "bytes": 1724064,
-    "sha256": "3e5565f334b418f86b3e5dc08065849682d52f525aff2aecea149d3a891f7130"
+    "bytes": 1725376,
+    "sha256": "c701ebff5586e2f4f9ecb774104c1c3accbbacc6d2b5b12c99df33d0b99fa77f"
   },
-  "builtAt": "2026-11-16T18:16:39Z",
+  "builtAt": "2026-11-16T19:23:44Z",
   "flash": {
     "mode": "dio",
     "freq": "40m",

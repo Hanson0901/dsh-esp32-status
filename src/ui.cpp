@@ -261,6 +261,14 @@ void Ui::render(const DshSnapshot &s) {
   lastSecond_ = second;
 
   g_.clearBuffer();
+  if (s.workspace[0]) {
+    // Top-left: folder name of the active conversation's workspace.
+    g_.setFont(u8g2_font_5x7_tf);
+    char ws[24];
+    snprintf(ws, sizeof ws, "%s", s.workspace);
+    while (ws[0] && (int)g_.getStrWidth(ws) > 48) ws[strlen(ws) - 1] = 0;
+    g_.drawStr(0, 7, ws);
+  }
   drawIcon(st, t);
 
   const char *title = titleFor(st);

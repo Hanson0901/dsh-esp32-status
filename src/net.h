@@ -36,4 +36,6 @@ class Net {
   bool needSetup_ = false;
   bool eventHooked_ = false;
   String wifiAck_;
+  String dbg_;
+  String lastWifiId_;
 };

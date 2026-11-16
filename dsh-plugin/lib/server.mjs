@@ -278,7 +278,12 @@ export class Bridge {
       this.log(`pairing device ${deviceId} from ${strip(req.socket.remoteAddress)}`)
     }
     this.touch({ ...body, paired: !known }, req)
-    json(res, 200, { ...this.statePayload(), token: this.token })
+    // Only regular state polls carry the Wi-Fi config: hello happens right
+    // after a reconnect, and re-applying there kicks the device off the air
+    // before it can ack the previous config.
+    const payload = this.statePayload()
+    delete payload.wifi
+    json(res, 200, { ...payload, token: this.token })
   }
 
   deviceState(req, res, url) {
@@ -296,6 +301,7 @@ export class Bridge {
         deviceId,
         rssi: Number(url.searchParams.get('rssi') || 0),
         fw: url.searchParams.get('fw') || undefined,
+        dbg: url.searchParams.get('dbg') || undefined,
       },
       req,
     )
@@ -308,6 +314,10 @@ export class Bridge {
   }
 
   statePayload() {
+    if (this.pendingWifi && Date.now() - this.pendingWifi.sentAt > 60000) {
+      this.log(`Wi-Fi config for ${this.pendingWifi.ssid} expired without ack`)
+      this.pendingWifi = null
+    }
     const snap = this.tracker.snapshot()
     return {
       now: Date.now() % 86400000,
@@ -315,6 +325,8 @@ export class Bridge {
       status: snap.status,
       body: snap.body,
       detail: snap.detail,
+      workspace: snap.workspace || '',
+      agents: snap.agents || [],
       model: snap.model.model || '',
       provider: snap.model.provider || '',
       effort: snap.model.effort || '',

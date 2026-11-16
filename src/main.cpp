@@ -149,6 +149,7 @@ void setup() {
   Serial.begin(SERIAL_BAUD);
   delay(150);
   Serial.printf("\n%s %s\n", FW_NAME, FW_VERSION);
+  Serial.println("[boot] dbg-report-v2");
 
   Wire.begin(OLED_SDA, OLED_SCL);
   Wire.setClock(400000);

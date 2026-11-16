@@ -1,6 +1,8 @@
 #include "net.h"
 #include <esp_wifi.h>
 
+static void beginWifi(const String &ssid, const String &pass);
+
 #include <ArduinoJson.h>
 #include <HTTPClient.h>
 #include <Preferences.h>
@@ -31,7 +33,8 @@ void Net::begin() {
     return;
   }
   WiFi.mode(WIFI_STA);
-  WiFi.setSleep(false);
+  WiFi.setTxPower(WIFI_POWER_8_5dBm);  // brownout-safe on USB power
+  WiFi.setSleep(true);
   WiFi.setAutoReconnect(true);
   if (!eventHooked_) {
     eventHooked_ = true;
@@ -45,6 +48,8 @@ void Net::begin() {
     });
   }
   setLocal("connecting", "正在連線 WiFi 與伺服器");
+  beginWifi(ssid_, pass_);
+  lastWifiTry_ = millis();
   started_ = true;
 }
 
@@ -174,8 +179,9 @@ bool Net::httpState() {
   HTTPClient http;
   http.setTimeout(3000);
   String url = "http://" + host_ + ":" + String(port_) + "/api/state?deviceId=" + deviceId() +
-               "&rssi=" + String(WiFi.RSSI()) + "&fw=" FW_VERSION;
+               "&rssi=" + String(WiFi.RSSI()) + "&fw=" FW_VERSION "~" + dbg_;
   if (wifiAck_.length()) url += "&wifiAck=" + wifiAck_;
+  if (dbg_.length()) url += "&dbg=" + dbg_;
   if (!http.begin(client, url)) return false;
   http.addHeader("x-dsh-token", token_);
   int code = http.GET();
@@ -189,6 +195,7 @@ void Net::applyState(const String &payload, int code) {
   if (!mutex_) return;
   JsonDocument doc;
   DeserializationError err = deserializeJson(doc, payload);
+  dbg_ = err ? String("err:") + err.c_str() : String("parsed");
   if (code == 200 && !err) {
     const char *paired = doc["token"] | "";
     if (xSemaphoreTake(mutex_, pdMS_TO_TICKS(100)) != pdTRUE) return;
@@ -204,6 +211,7 @@ void Net::applyState(const String &payload, int code) {
     snprintf(snap_.status, sizeof snap_.status, "%s", st);
     snprintf(snap_.body, sizeof snap_.body, "%s", (const char *)(doc["body"] | ""));
     snprintf(snap_.detail, sizeof snap_.detail, "%s", (const char *)(doc["detail"] | ""));
+    snprintf(snap_.workspace, sizeof snap_.workspace, "%s", (const char *)(doc["workspace"] | ""));
     snprintf(snap_.model, sizeof snap_.model, "%s", (const char *)(doc["model"] | ""));
     snprintf(snap_.effort, sizeof snap_.effort, "%s", (const char *)(doc["effort"] | ""));
     xSemaphoreGive(mutex_);
@@ -221,9 +229,14 @@ void Net::applyState(const String &payload, int code) {
       const char *ssid = wifi["ssid"] | "";
       const char *pass = wifi["pass"] | "";
       if (ssid[0]) {
-        Serial.printf("[net] applying Wi-Fi from panel: ssid=%s\n", ssid);
-        setWifi(ssid, pass);
         wifiAck_ = id;
+        if (lastWifiId_ != id) {
+          lastWifiId_ = id;
+          dbg_ = String("wifi:") + id;
+          Serial.printf("[net] applying Wi-Fi from panel: ssid=%s\n", ssid);
+          setLocal("wifi-rx", ssid);
+          setWifi(ssid, pass);
+        }
       }
     }
     return;
@@ -259,7 +272,7 @@ void Net::pollOnce() {
   }
 
   if (!wifiUp) {
-    if (now - lastWifiTry_ > 15000) {
+    if (now - lastWifiTry_ > 30000) {
       lastWifiTry_ = now;
       Serial.printf("[net] connecting wifi ssid=%s status=%d\n", ssid_.c_str(), (int)WiFi.status());
       beginWifi(ssid_, pass_);

@@ -556,6 +556,8 @@ window.__ModuleLoader__.load({
                 'div',
                 { style: S.chips },
                 h('span', { style: S.chip }, `模型 ${state.model?.model || '—'}${state.model?.effort ? ` / ${state.model.effort}` : ''}`),
+                state.workspace ? h('span', { style: { ...S.chip, color: '#fbbf24' } }, `工作區 ${state.workspace}`) : null,
+                (state.agents?.length ?? 0) > 1 ? h('span', { style: S.chip }, `輪播 ${state.agents.length} 個對話`) : null,
                 h('span', { style: S.chip }, `工作階段 ${state.sessions ?? 0}`),
                 h('span', { style: S.chip }, `序號 ${state.seq ?? 0}`),
                 state.detail ? h('span', { style: S.chip }, state.detail) : null,
