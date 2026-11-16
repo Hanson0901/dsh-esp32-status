@@ -183,6 +183,8 @@ export class Tracker {
         if (ev.type === 'approval/asked') {
           pending.push({
             id: ev.data?.id ?? `${session.id}:${i}`,
+            agentId: String(session.id ?? ''),
+            toolName: ev.data?.toolName ?? 'tool',
             tool: ev.data?.toolName ?? 'tool',
             callId: ev.data?.callId,
             reason: ev.data?.reason ?? '',
@@ -298,9 +300,7 @@ export class Tracker {
 
   activeAgents() {
     const list = []
-    const pickedId = this.pick()?.id
-    const candidates = [...this.agents].filter(([id]) => !pickedId || id === pickedId)
-    for (const [id, agent] of candidates.length ? candidates : [...this.agents]) {
+    for (const [id, agent] of this.agents) {
       if (agent.status !== 'running') continue
       const stream = this.streams.get(id)
       list.push({
