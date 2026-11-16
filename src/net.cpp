@@ -89,6 +89,14 @@ void Net::setLocal(const char *status, const char *body) {
   xSemaphoreGive(mutex_);
 }
 
+static void beginWifi(const String &ssid, const String &pass) {
+  // A cold WiFi.begin() after boot can sit in AUTH_FAIL; an explicit
+  // disconnect first makes the station retry the handshake cleanly.
+  WiFi.disconnect(true, false);
+  delay(80);
+  WiFi.begin(ssid.c_str(), pass.c_str());
+}
+
 void Net::setWifi(const String &ssid, const String &pass) {
   ssid_ = ssid;
   pass_ = pass;
@@ -100,9 +108,7 @@ void Net::setWifi(const String &ssid, const String &pass) {
     return;
   }
   setLocal("connecting", "正在套用新的 WiFi 設定");
-  WiFi.disconnect(true, false);
-  delay(50);
-  WiFi.begin(ssid_.c_str(), pass_.c_str());
+  beginWifi(ssid_, pass_);
   lastWifiTry_ = millis();
 }
 
@@ -176,7 +182,6 @@ bool Net::httpState() {
   String response = code > 0 ? http.getString() : String();
   http.end();
   applyState(response, code);
-  if (code == 200 && wifiAck_.length()) wifiAck_ = "";
   return code == 200;
 }
 
@@ -257,7 +262,7 @@ void Net::pollOnce() {
     if (now - lastWifiTry_ > 15000) {
       lastWifiTry_ = now;
       Serial.printf("[net] connecting wifi ssid=%s status=%d\n", ssid_.c_str(), (int)WiFi.status());
-      WiFi.begin(ssid_.c_str(), pass_.c_str());
+      beginWifi(ssid_, pass_);
     }
     return;
   }
