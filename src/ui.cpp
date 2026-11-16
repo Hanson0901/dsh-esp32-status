@@ -208,12 +208,12 @@ void Ui::drawIcon(const char *status, uint32_t t) {
 
 void Ui::drawBar(const DshSnapshot &s, uint32_t t) {
   g_.setFont(u8g2_font_5x7_tf);
-  char clk[16] = "G8 --:--:--";
+  char clk[16] = "--:--:--";
   if (s.serverNowMs != 0) {
     uint32_t now = s.serverNowMs + (t - s.recvAtMs);
     uint32_t local = now / 1000 + TZ_OFFSET_MINUTES * 60;
     uint32_t sod = local % 86400;
-    snprintf(clk, sizeof clk, "G8 %02u:%02u:%02u", (unsigned)(sod / 3600),
+    snprintf(clk, sizeof clk, "%02u:%02u:%02u", (unsigned)(sod / 3600),
              (unsigned)((sod / 60) % 60), (unsigned)(sod % 60));
   }
   g_.drawStr(2, BAR_BASE, clk);
@@ -226,12 +226,20 @@ void Ui::drawBar(const DshSnapshot &s, uint32_t t) {
   if (s.effort[0]) snprintf(mdl, sizeof mdl, "%s/%s", m, s.effort);
   else snprintf(mdl, sizeof mdl, "%s", m);
 
-  int avail = 126 - (timeEnd + 6);
-  char out[28];
-  snprintf(out, sizeof out, "%s", mdl);
-  while (out[0] && (int)g_.getStrWidth(out) > avail) out[strlen(out) - 1] = 0;
-  int w = (int)g_.getStrWidth(out);
-  if (w > 0) g_.drawStr(126 - w, BAR_BASE, out);
+  int x0 = timeEnd + 6;
+  int avail = 126 - x0;
+  int w = (int)g_.getStrWidth(mdl);
+  if (w <= avail) {
+    g_.drawStr(126 - w, BAR_BASE, mdl);
+  } else {
+    uint32_t travel = (uint32_t)(w - avail + 6);
+    uint32_t period = 1200 + travel * 40 + 700;
+    uint32_t tt = t % period;
+    int off = tt > 1200 ? (int)((tt - 1200) / 40) : 0;
+    g_.setClipWindow(x0, 55, 127, 64);
+    g_.drawStr(x0 - off, BAR_BASE, mdl);
+    g_.setMaxClipWindow();
+  }
 
   // Dotted separator keeps the two fixed corners visually separate.
   for (int x = 0; x < W; x += 3) g_.drawPixel(x, BAR_LINE);
@@ -264,10 +272,18 @@ void Ui::render(const DshSnapshot &s) {
   if (s.workspace[0]) {
     // Top-left: folder name of the active conversation's workspace.
     g_.setFont(u8g2_font_5x7_tf);
-    char ws[24];
-    snprintf(ws, sizeof ws, "%s", s.workspace);
-    while (ws[0] && (int)g_.getStrWidth(ws) > 48) ws[strlen(ws) - 1] = 0;
-    g_.drawStr(0, 7, ws);
+    constexpr int WS_W = 48;
+    int ww = (int)g_.getStrWidth(s.workspace);
+    int wx = 0;
+    if (ww > WS_W) {
+      uint32_t travel = (uint32_t)(ww - WS_W + 6);
+      uint32_t period = 1500 + travel * 40 + 700;
+      uint32_t tt = (t - statusSince_) % period;
+      if (tt > 1500) wx = -(int)((tt - 1500) / 40);
+      g_.setClipWindow(0, 0, WS_W, 10);
+    }
+    g_.drawStr(wx, 7, s.workspace);
+    if (ww > WS_W) g_.setMaxClipWindow();
   }
   drawIcon(st, t);
 

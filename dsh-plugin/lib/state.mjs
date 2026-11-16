@@ -330,7 +330,12 @@ export class Tracker {
     } else {
       const active = this.activeAgents()
       if (active.length) {
-        picked = { mode: 'active', ...active[(this._rotation ?? 0) % active.length] }
+        // Switch workspaces about every 10 seconds, not on every poll.
+        if (!this._rotateAt || Date.now() - this._rotateAt >= 10000) {
+          this._rotation = ((this._rotation ?? 0) + 1) % 100000
+          this._rotateAt = Date.now()
+        }
+        picked = { mode: 'active', ...active[this._rotation % active.length] }
       }
     }
     this._picked = picked
@@ -429,7 +434,6 @@ export class Tracker {
   }
 
   snapshot() {
-    this._rotation = ((this._rotation ?? 0) + 1) % 100000
     return {
       status: this.status(),
       label: STATUS_LABEL[this.status()] ?? this.status(),
