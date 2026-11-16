@@ -34,4 +34,5 @@ class Net {
   bool helloDone_ = false;
   bool started_ = false;
   bool needSetup_ = false;
+  bool eventHooked_ = false;
 };

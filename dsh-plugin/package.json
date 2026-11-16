@@ -1,6 +1,6 @@
 {
   "name": "dsh-esp32-status",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "ESP32 OLED status display for DeepSeek Harness: a LAN bridge, a sidebar panel, and one-click flashing.",
   "type": "module",
   "main": "index.js",

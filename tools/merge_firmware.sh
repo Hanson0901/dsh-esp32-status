@@ -26,8 +26,8 @@ mkdir -p "$OUT"
 BIN="$OUT/dsh-esp32-status-esp32dev.bin"
 
 # shellcheck disable=SC2086
-$ESPTOOL --chip esp32 merge-bin -o "$BIN" \
-  --flash-mode dio --flash-freq 40m --flash-size 4MB \
+$ESPTOOL --chip esp32 merge_bin -o "$BIN" \
+  --flash_mode dio --flash_freq 40m --flash_size 4MB \
   0x1000 "$BUILD/bootloader.bin" \
   0x8000 "$BUILD/partitions.bin" \
   0xe000 "$BOOT_APP0" \
@@ -35,6 +35,10 @@ $ESPTOOL --chip esp32 merge-bin -o "$BIN" \
 
 BYTES="$(wc -c < "$BIN" | tr -d ' ')"
 SHA="$(shasum -a 256 "$BIN" | awk '{print $1}')"
+APP_BIN="$OUT/dsh-esp32-status-esp32dev-app.bin"
+cp "$BUILD/firmware.bin" "$APP_BIN"
+APP_BYTES="$(wc -c < "$APP_BIN" | tr -d ' ')"
+APP_SHA="$(shasum -a 256 "$APP_BIN" | awk '{print $1}')"
 NOW="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
 cat > "$OUT/manifest.json" <<JSON
@@ -47,6 +51,12 @@ cat > "$OUT/manifest.json" <<JSON
   "offset": 0,
   "bytes": $BYTES,
   "sha256": "$SHA",
+  "app": {
+    "file": "dsh-esp32-status-esp32dev-app.bin",
+    "offset": 65536,
+    "bytes": $APP_BYTES,
+    "sha256": "$APP_SHA"
+  },
   "builtAt": "$NOW",
   "flash": {
     "mode": "dio",
@@ -58,3 +68,4 @@ cat > "$OUT/manifest.json" <<JSON
 JSON
 
 echo "wrote $BIN ($BYTES bytes, sha256 $SHA)"
+echo "wrote $APP_BIN ($APP_BYTES bytes, sha256 $APP_SHA)"

@@ -87,7 +87,7 @@ def main() -> None:
                 for bit in range(8):
                     x = bx * 8 + bit
                     if x < advance and pixels[x, y]:
-                        byte |= 1 << (7 - bit)
+                        byte |= 1 << bit
                 blob.append(byte)
         glyphs.append((cp, advance, cell_h, advance, offset))
 

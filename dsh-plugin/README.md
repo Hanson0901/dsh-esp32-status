@@ -50,13 +50,17 @@ Serial 115200；本專案在 ESP32-D0WD-V3 + CP2102 + 0.96" SSD1306 上驗證。
 3. 按「重新掃描」→ 對序列埠按「偵測」確認 chip/MAC → 按「燒錄」。
 4. 面板會顯示進度與 esptool log；完成後板子自動重啟。
 
-內建映像檔是合併好的單一 bin（bootloader `0x1000`、partitions `0x8000`、
-boot_app0 `0xe000`、app `0x10000`），燒到 `0x0` 即可。手動燒錄：
+預設勾選「只更新程式（保留 Wi-Fi 設定）」：只寫 app 分區（`0x10000`），
+NVS 裡的 Wi-Fi/token 不會被清掉，之後更新都用這個。
+**第一次安裝**（或板子原本不是這個韌體）請取消勾選，寫完整映像到 `0x0`
+（bootloader `0x1000`、partitions `0x8000`、boot_app0 `0xe000`、app `0x10000`）。
+
+手動更新（保留設定）：
 
 ```bash
 esptool.py --chip esp32 --port /dev/cu.usbserial-0001 --baud 115200 \
   write_flash -z --flash_mode dio --flash_freq 40m --flash_size 4MB \
-  0x0 node_modules/dsh-esp32-status/firmware/dsh-esp32-status-esp32dev.bin
+  0x10000 node_modules/dsh-esp32-status/firmware/dsh-esp32-status-esp32dev-app.bin
 ```
 
 找不到 esptool 時，面板會提示；也可以：
@@ -139,7 +143,14 @@ export PLATFORMIO_CORE_DIR=$PWD/.pio-core
 ```
 
 `-e esp32dev-release` 會加上 `-DDSH_RELEASE_BUILD=1`，確保映像檔不含私人憑證。
-合併映像檔（`esptool v5`）：
+`tools/merge_firmware.sh` 會建置、合併完整映像，並另外輸出只含 app 的
+`firmware/dsh-esp32-status-esp32dev-app.bin`（更新用，保留 NVS）與 manifest：
+
+```bash
+./tools/merge_firmware.sh
+```
+
+若要手動合併（`esptool v5` 用 `merge-bin`，v4 用 `merge_bin` 加底線參數）：
 
 ```bash
 esptool --chip esp32 merge-bin -o dsh-plugin/firmware/dsh-esp32-status-esp32dev.bin \

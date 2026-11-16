@@ -373,7 +373,7 @@ export class Bridge {
         const port = String(body.port || '')
         if (!port) throw new Error('port required')
         this.flasher
-          .flash(port, { erase: Boolean(body.erase) })
+          .flash(port, { erase: Boolean(body.erase), appOnly: body.appOnly !== false })
           .catch((error) => this.log(`flash failed: ${error.message}`))
         break
       }

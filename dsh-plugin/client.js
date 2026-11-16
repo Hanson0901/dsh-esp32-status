@@ -350,6 +350,7 @@ window.__ModuleLoader__.load({
       const [busy, setBusy] = useState('')
       const [showToken, setShowToken] = useState(false)
       const [confirmPort, setConfirmPort] = useState('')
+      const [preserve, setPreserve] = useState(true)
       const [confirmReset, setConfirmReset] = useState(false)
       const [copied, setCopied] = useState('')
       const [lastSync, setLastSync] = useState(0)
@@ -634,11 +635,20 @@ window.__ModuleLoader__.load({
                       confirmPort === port.path
                         ? h(
                             'div',
-                            { style: { display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' } },
-                            h('span', { style: { ...S.hint, marginRight: 2 } }, '會覆蓋板子韌體'),
+                            { style: { display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' } },
+                            h(
+                              'label',
+                              { style: { ...S.hint, display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer' } },
+                              h('input', {
+                                type: 'checkbox',
+                                checked: preserve,
+                                onChange: (e) => setPreserve(e.target.checked),
+                              }),
+                              preserve ? '只更新程式（保留 Wi-Fi 設定）' : '完整映像（會清除 Wi-Fi 設定）',
+                            ),
                             btn('確認燒錄', () => {
                               setConfirmPort('')
-                              act('flash', { port: port.path })
+                              act('flash', { port: port.path, appOnly: preserve })
                             }, { primary: true }),
                             btn('取消', () => setConfirmPort('')),
                           )

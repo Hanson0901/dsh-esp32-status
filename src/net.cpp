@@ -32,6 +32,17 @@ void Net::begin() {
   WiFi.mode(WIFI_STA);
   WiFi.setSleep(false);
   WiFi.setAutoReconnect(true);
+  if (!eventHooked_) {
+    eventHooked_ = true;
+    WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info) {
+      if (event == ARDUINO_EVENT_WIFI_STA_DISCONNECTED) {
+        Serial.printf("[net] wifi disconnected reason=%u\n", info.wifi_sta_disconnected.reason);
+      } else if (event == ARDUINO_EVENT_WIFI_STA_GOT_IP) {
+        Serial.printf("[net] got ip=%s gw=%s ch=%d\n", WiFi.localIP().toString().c_str(),
+                      WiFi.gatewayIP().toString().c_str(), WiFi.channel());
+      }
+    });
+  }
   setLocal("connecting", "正在連線 WiFi 與伺服器");
   started_ = true;
 }
@@ -227,9 +238,9 @@ void Net::pollOnce() {
   }
 
   if (!wifiUp) {
-    if (now - lastWifiTry_ > 5000) {
+    if (now - lastWifiTry_ > 15000) {
       lastWifiTry_ = now;
-      Serial.printf("[net] connecting wifi ssid=%s\n", ssid_.c_str());
+      Serial.printf("[net] connecting wifi ssid=%s status=%d\n", ssid_.c_str(), (int)WiFi.status());
       WiFi.begin(ssid_.c_str(), pass_.c_str());
     }
     return;
@@ -251,8 +262,9 @@ void Net::printStatus(Stream &out) {
   DshSnapshot s;
   copySnapshot(s);
   out.printf("fw=%s id=%s\n", FW_VERSION, deviceId().c_str());
-  out.printf("wifi=%s ssid=%s ip=%s rssi=%d\n", s.wifiUp ? "up" : "down", ssid_.c_str(),
-             WiFi.localIP().toString().c_str(), WiFi.RSSI());
+  out.printf("wifi=%s ssid=%s ip=%s gw=%s rssi=%d st=%d\n", s.wifiUp ? "up" : "down", ssid_.c_str(),
+             WiFi.localIP().toString().c_str(), WiFi.gatewayIP().toString().c_str(), WiFi.RSSI(),
+             (int)WiFi.status());
   out.printf("server=%s:%u token=%s…\n", host_.c_str(), port_,
              token_.length() > 4 ? token_.substring(0, 4).c_str() : "????");
   out.printf("state=%s http=%d up=%d body=%s\n", s.status, s.httpCode, (int)s.serverUp, s.body);

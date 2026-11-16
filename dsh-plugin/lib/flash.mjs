@@ -75,7 +75,15 @@ export class Flasher {
     try {
       const manifest = JSON.parse(readFileSync(FW_MANIFEST, 'utf8'))
       if (!existsSync(FW_FILE)) return null
-      return { ...manifest, path: FW_FILE }
+      const appFile = manifest.app?.file
+      const appPath = appFile ? path.join(path.dirname(FW_MANIFEST), appFile) : ''
+      return {
+        ...manifest,
+        path: FW_FILE,
+        app: appPath && existsSync(appPath)
+          ? { path: appPath, offset: manifest.app.offset ?? 0x10000, bytes: manifest.app.bytes, sha256: manifest.app.sha256 }
+          : null,
+      }
     } catch {
       return existsSync(FW_FILE) ? { path: FW_FILE, version: 'unknown', bytes: 0 } : null
     }
@@ -229,11 +237,16 @@ export class Flasher {
     }
   }
 
-  async flash(port, { erase = false } = {}) {
+  async flash(port, { erase = false, appOnly = false } = {}) {
     if (this.state.running) throw new Error('另一個燒錄或偵測正在進行')
     const tool = this.ensureTool()
     if (!tool) throw new Error(this.toolError)
     if (!this.firmware) throw new Error('插件內沒有韌體檔（firmware/*.bin）')
+
+    const useApp = appOnly && this.firmware.app
+    const target = useApp ? this.firmware.app : { path: this.firmware.path, offset: 0 }
+    const offsetText = `0x${target.offset.toString(16)}`
+    const modeLabel = useApp ? 'app only · 保留 NVS/Wi-Fi 設定' : 'merged image · 會清除 NVS/Wi-Fi 設定'
 
     this.state = {
       running: true,
@@ -245,8 +258,9 @@ export class Flasher {
       exitCode: null,
       error: '',
       log: [],
+      appOnly: Boolean(useApp),
     }
-    this.log(`firmware ${this.firmware.version ?? 'unknown'} · ${port}`)
+    this.log(`firmware ${this.firmware.version ?? 'unknown'} · ${port} · ${modeLabel}`)
     try {
       if (erase) {
         this.log('erase_flash…')
@@ -257,7 +271,7 @@ export class Flasher {
         if (code !== 0) throw new Error(`erase_flash 失敗（${code}）`)
       }
       this.state.progress = 0
-      this.log('write_flash 0x0 (merged image)…')
+      this.log(`write_flash ${offsetText} (${modeLabel})…`)
       const code = await this.run([
         ...tool.args,
         '--chip',
@@ -278,8 +292,8 @@ export class Flasher {
         '40m',
         '--flash_size',
         '4MB',
-        '0x0',
-        this.firmware.path,
+        offsetText,
+        target.path,
       ])
       this.state.exitCode = code
       if (code !== 0) throw new Error(`write_flash 失敗（${code}）`)
